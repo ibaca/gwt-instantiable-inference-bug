@@ -4,6 +4,8 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Bug implements EntryPoint {
 
@@ -11,9 +13,9 @@ public class Bug implements EntryPoint {
         RootPanel root = RootPanel.get();
 
         // Rx.of(create()).map(JavaScriptObject::<OverlayFoo>cast)
-        //         .map(new Func<OverlayFoo, String>() { public String f(OverlayFoo foo) {return Bug.this.foo(foo);} })
-        //         .map(new Func<String, Label>() { public Label f(String text) {return new Label(text);} })
-        //         .subscribe(new Subscriber<Label>() { public void onNext(Label w) { root.add(w); } });
+        //         .map(new Function<OverlayFoo, String>() { public String apply(OverlayFoo foo) {return Bug.this.foo(foo);} })
+        //         .map(new Function<String, Label>() { public Label apply(String text) {return new Label(text);} })
+        //         .subscribe(new Consumer<Label>() { public void accept(Label w) { root.add(w); } });
 
         Rx.of(create()).map(JavaScriptObject::<OverlayFoo>cast)
                 .map(this::foo)
@@ -30,18 +32,18 @@ public class Bug implements EntryPoint {
             return create(o -> p.subscribe(operator.call(o)));
         }
 
-        public final <R> Rx<R> map(Func<? super T, ? extends R> transformer) {
-            return lift((Operator<R, T>) o -> t -> o.onNext(transformer.f(t)));
+        public final <R> Rx<R> map(Function<? super T, ? extends R> transformer) {
+            return lift(o -> t -> o.accept(transformer.apply(t)));
         }
 
-        public final void subscribe(Subscriber<T> s) {
+        public final void subscribe(Consumer<T> s) {
             this.p.subscribe(s);
         }
 
         public static <R> Rx<R> of(R... rs) {
             return create(s -> {
                 for (R r : rs) {
-                    s.onNext(r);
+                    s.accept(r);
                 }
             });
         }
@@ -51,20 +53,12 @@ public class Bug implements EntryPoint {
         }
     }
 
-    interface Producer<T> {
-        void subscribe(Subscriber<? super T> s);
-    }
-
-    interface Subscriber<T> {
-        void onNext(T next);
+    public interface Producer<T> {
+        void subscribe(Consumer<? super T> s);
     }
 
     public interface Operator<R, T> {
-        Subscriber<? super T> call(Subscriber<? super R> t);
-    }
-
-    interface Func<T, V> {
-        V f(T t);
+        Consumer<? super T> call(Consumer<? super R> t);
     }
 
     public String foo(Foo foo) { return foo.getFoo(); }
