@@ -1,5 +1,7 @@
 ## GWT Instantiable Inference Bug
 
+**This bug has already been fixed in 2.8.0-SNPASHOT.**
+
 This compilation works 
 
     mvn clean package -Dgwt.style=PRETTY -Dgwt.draftCompile=true
